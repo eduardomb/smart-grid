@@ -10,10 +10,10 @@
 *
 * Usage Example:
 *   <div id="#my-grid">
-*     <article data-rows="1" data-cols="1" >#1</article>
-*     <article data-rows="1" data-cols="2" >#2</article>
-*     <article data-rows="1" data-cols="3" >#3</article>
-*     <article data-rows="2" data-cols="1" >#4</article>
+*     <div data-rows="1" data-cols="1" >#1</div>
+*     <div data-rows="1" data-cols="2" >#2</div>
+*     <div data-rows="1" data-cols="3" >#3</div>
+*     <div data-rows="2" data-cols="1" >#4</div>
 *   </div>
 *
 *   <script type="text/javascript">
@@ -35,6 +35,7 @@
 *   - vLineThickness: 1  Vertical sep line thickness
 *   - hLineColor: #ccc   Horiontal sep line color
 *   - vLineColor: #ccc   Vertical sep line color
+*   - selector: div      Selector for elements in grid
 */
 (function($){
   $.fn.grid = function(options) {
@@ -93,7 +94,8 @@
       'hLineThickness': 1,
       'vLineThickness': 1,
       'hLineColor': '#ccc',
-      'vLineColor': '#ccc'
+      'vLineColor': '#ccc',
+      'selector': 'div'
     }, options);
 
     // Aux vars.
@@ -117,7 +119,7 @@
       this.css('position', 'relative')
 
     // 1. Insert each element in grid using First Fit.
-    $('article', this).each(function() {
+    $(s['selector'], this).each(function() {
       var pos = [0, 0],
         element = {
           'id': ++id,

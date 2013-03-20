@@ -1,0 +1,30 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Example - Styled borders</title>
+  <script type="text/javascript" src="../js/jquery-1.9.1.min.js"></script>
+  <script type="text/javascript" src="../js/grid.js"></script>
+  <script type="text/javascript">
+  $(function() {
+    $('#grid').grid({
+      cols: 6,
+      hLineThickness: 4,
+      vLineThickness: 2,
+      hLineColor: '#0f0',
+      vLineColor: 'blue'
+    });
+  });
+  </script>
+</head>
+<body>
+	<div id="grid">
+		<div data-rows="3" data-cols="2">#1 (3x2)</div>
+		<div data-rows="1" data-cols="2">#2 (1x2)</div>
+		<div data-rows="1" data-cols="2">#3 (1x2)</div>
+		<div data-rows="1" data-cols="4">#4 (1x4)</div>
+		<div data-rows="1" data-cols="3">#5 (1x3)</div>
+		<div data-rows="1" data-cols="1">#6 (1x1)</div>
+	</div>
+</body>
+</html>
