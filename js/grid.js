@@ -116,16 +116,16 @@
       $.error('Grid objects can\'t have position: fixed on CSS.');
       return this;
     } else if (this.css('position') == 'static')
-      this.css('position', 'relative')
+      this.css('position', 'relative');
 
     // 1. Insert each element in grid using First Fit.
     $(s['selector'], this).each(function() {
       var pos = [0, 0],
-        element = {
-          'id': ++id,
-          'cols': $(this).data('cols'),
-          'rows': $(this).data('rows')
-        }
+          element = {
+            'id': ++id,
+            'cols': $(this).data('cols'),
+            'rows': $(this).data('rows')
+          }
 
       // Find the first fiting position.
       while (!isAllocable(element, pos)) {
@@ -248,6 +248,9 @@
         }
       }
     }
+
+    // 4. Set the grid total height.
+    this.height(grid.length * (boxSide + hs));
 
     return this;
   };
