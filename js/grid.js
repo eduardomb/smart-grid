@@ -221,21 +221,23 @@
     // vertical lines and draw them.
     for (var x = 0; x < hLines.length; x++) {
       var y = 0,
-        start = null,
-        end = null;
+          start = null,
+          end = null;
 
-      while (y < s['cols']) {
+      while (hLines[x] !== undefined && y < s['cols']) {
         // While exists consecutive separation lines.
         while (hLines[x][y++]) {
           if (start === null)
             start = y - 1;
 
-          else if (vLines[x][y - 2] && vLines[x + 1][y -2]) {
-            // Although the line is consecutive, it wont be grouped because in
-            // this case it would colide with a vertical line. Thus, the line
-            // must end before it colides and a new one is started.
-            drawHorizontalLine(this);
-            start = y - 1;
+          else if (vLines[x] !== undefined  && vLines[x + 1] !== undefined) {
+            if(vLines[x][y - 2] && vLines[x + 1][y -2]) {
+              // Although the line is consecutive, it wont be grouped because
+              // in this case it would colide with a vertical line. Thus, the
+              // line must end before it colides and a new one is started.
+              drawHorizontalLine(this);
+              start = y - 1;
+            }
           }
 
           end = y - 1;
