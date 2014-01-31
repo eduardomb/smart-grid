@@ -38,6 +38,8 @@
 *   - selector: div      Selector for elements in grid
 */
 (function($){
+  'use strict';
+
   $.fn.grid = function(options) {
     /**
      * Convert an integer into a string and append 'px' to it.
@@ -50,33 +52,36 @@
      * Check if an element is allocable in a given position.
      */
     function isAllocable(element, pos) {
-      if (pos[Y] + element['cols'] - 1 >= s['cols'])
+      if (pos[Y] + element.cols - 1 >= s.cols) {
         return false;  // Element is too wide.
+      }
 
-      for (var i = pos[X]; i < pos[X] + element['rows']; i++)
-        for (var j = pos[Y]; j < pos[Y] + element['cols']; j++)
-          if (grid[i] !== undefined && grid[i][j])
+      for (var i = pos[X]; i < pos[X] + element.rows; i++) {
+        for (var j = pos[Y]; j < pos[Y] + element.cols; j++) {
+          if (grid[i] !== undefined && grid[i][j]) {
             return false;  // Space is already taken.
+          }
+        }
+      }
 
       return true;
     }
 
     /**
     * Draw a horizontal line after element based on variables 'start' and 'end'
-    * current values.
     */
-    function drawHorizontalLine(element) {
+    function drawHorizontalLine(element, start, end) {
       var line = $('<div></div>');
 
       line.css({
         'height': '0',
-        'border-bottom-color': s['hLineColor'],
-        'border-bottom-width': px(s['hLineThickness']),
+        'border-bottom-color': s.hLineColor,
+        'border-bottom-width': px(s.hLineThickness),
         'border-bottom-style': 'dotted',
         'position': 'absolute',
         'width': px((end - start) * (boxSide + vs) + boxSide),
         'left': px(start * (boxSide + vs)),
-        'top': px(x * (boxSide + vs) + boxSide + s['hSpacing'])
+        'top': px(x * (boxSide + vs) + boxSide + s.hSpacing)
       });
 
       element.append(line);
@@ -100,12 +105,17 @@
 
     // Aux vars.
     var id = 0,
-        grid = new Array(),
-        vLines = new Array(),
-        hLines = new Array(),
-        vs = s['vSpacing'] * 2 + s['vLineThickness'],
-        hs = s['hSpacing'] * 2 + s['hLineThickness'],
-        boxSide = (this.width() - (s['cols'] - 1) * vs) / s['cols'];
+        grid = [],
+        vLines = [],
+        hLines = [],
+        vs = s.vSpacing * 2 + s.vLineThickness,
+        hs = s.hSpacing * 2 + s.hLineThickness,
+        boxSide = (this.width() - (s.cols - 1) * vs) / s.cols,
+        start,
+        end;
+
+    // Iterators.
+    var i, j, x, y;
 
     // Grid position must be relative or absolute in order to position posts
     // with position absolute in relation to grid. If the grid element position
@@ -115,52 +125,57 @@
     if (this.css('position') == 'fixed') {
       $.error('Grid objects can\'t have position: fixed on CSS.');
       return this;
-    } else if (this.css('position') == 'static')
+    } else if (this.css('position') == 'static') {
       this.css('position', 'relative');
+    }
 
     // 1. Insert each element in grid using First Fit.
-    $(s['selector'], this).each(function() {
-      var pos = [0, 0],
-          element = {
-            'id': ++id,
-            'cols': $(this).data('cols'),
-            'rows': $(this).data('rows')
-          }
+    $(s.selector, this).each(function() {
+      var pos = [0, 0];
+      var element = {
+        'id': ++id,
+        'cols': $(this).data('cols'),
+        'rows': $(this).data('rows')
+      };
 
       // Find the first fiting position.
       while (!isAllocable(element, pos)) {
-        if (pos[Y] <= s['cols'])
+        if (pos[Y] < s.cols) {
           pos[Y] += 1;  // Jump a column.
-
-        else {
+        } else {
           pos[X] += 1;  // Jump a line.
           pos[Y] = 0;  // Reset column to left.
         }
       }
 
       // Mark the element position in a virtual auxiliar grid.
-      for (var i = pos[X]; i < pos[X] + element['rows']; i++) {
-        if (grid[i] === undefined)
-          grid[i] = new Array();
+      for (i = pos[X]; i < pos[X] + element.rows; i++) {
+        if (grid[i] === undefined) {
+          grid[i] = [];
+        }
 
-        for (var j = pos[Y]; j < pos[Y] + element['cols']; j++)
+        for (j = pos[Y]; j < pos[Y] + element.cols; j++) {
           grid[i][j] = id;
+        }
       }
 
       // Mark the horizontal sep lines position in a virtual auxiliar grid.
       if (pos[X] > 0) {
-        if (hLines[pos[X] - 1] === undefined)
-          hLines[pos[X] - 1] = new Array();
+        if (hLines[pos[X] - 1] === undefined) {
+          hLines[pos[X] - 1] = [];
+        }
 
-        for (var i = pos[Y]; i < pos[Y] + element['cols']; i++)
+        for (i = pos[Y]; i < pos[Y] + element.cols; i++) {
           hLines[pos[X] - 1][i] = true;
+        }
       }
 
       // Mark the vertical sep lines position in a virtual auxiliar grid.
       if (pos[Y] > 0) {
-        for (var i = pos[X]; i < pos[X] + element['rows']; i++) {
-          if (vLines[i] === undefined)
-            vLines[i] = new Array();
+        for (i = pos[X]; i < pos[X] + element.rows; i++) {
+          if (vLines[i] === undefined) {
+            vLines[i] = [];
+          }
 
           vLines[i][pos[Y] - 1] = true;
         }
@@ -170,18 +185,18 @@
       $(this).css({
         'position': 'absolute',
         'display': 'inline-block',
-        'width': px(element['cols'] * (boxSide + vs) - vs),
-        'height': px(element['rows'] * (boxSide + hs) - hs),
+        'width': px(element.cols * (boxSide + vs) - vs),
+        'height': px(element.rows * (boxSide + hs) - hs),
         'left': px(pos[Y] * (boxSide + vs)),
         'top': px(pos[X] * (boxSide + hs))
       });
     });
 
     // 2. Group consecutive vertical sep lines and draw them.
-    for (var y = 0; y < s['cols'] - 1; y++) {
-      var x = 0,
-        start = null,
-        end = null;
+    for (y = 0; y < s.cols - 1; y++) {
+      start = null;
+      end = null;
+      x = 0;
 
       while (x < vLines.length) {
         // While exists consecutive sep lines.
@@ -189,10 +204,9 @@
           if (start === null) {
             start = x - 1;
             end = x - 1;
-          }
-
-          else
+          } else {
             end = x - 1;
+          }
         }
 
         if (start !== null && end !== null) {
@@ -200,12 +214,12 @@
 
           line.css({
             'width': '0',
-            'border-left-width': px(s['vLineThickness']),
+            'border-left-width': px(s.vLineThickness),
             'border-left-style': 'dotted',
-            'border-left-color': s['vLineColor'],
+            'border-left-color': s.vLineColor,
             'position': 'absolute',
             'height': px((end - start) * (boxSide + hs) + boxSide),
-            'left': px(y * (boxSide + vs) + boxSide + s['vSpacing']),
+            'left': px(y * (boxSide + vs) + boxSide + s.vSpacing),
             'top': px(start * (boxSide + hs))
           });
 
@@ -219,23 +233,24 @@
 
     // 3. Group consecutive horizontal sep lines that doesn't cross separation
     // vertical lines and draw them.
-    for (var x = 0; x < hLines.length; x++) {
-      var y = 0,
-          start = null,
-          end = null;
+    for (x = 0; x < hLines.length; x++) {
+      start = null;
+      end = null;
+      y = 0;
 
-      while (hLines[x] !== undefined && y < s['cols']) {
+      while (hLines[x] !== undefined && y < s.cols) {
         // While exists consecutive separation lines.
         while (hLines[x][y++]) {
-          if (start === null)
+          if (start === null) {
             start = y - 1;
+          }
 
           else if (vLines[x] !== undefined  && vLines[x + 1] !== undefined) {
             if(vLines[x][y - 2] && vLines[x + 1][y -2]) {
               // Although the line is consecutive, it wont be grouped because
               // in this case it would colide with a vertical line. Thus, the
               // line must end before it colides and a new one is started.
-              drawHorizontalLine(this);
+              drawHorizontalLine(this, start, end);
               start = y - 1;
             }
           }
@@ -244,7 +259,7 @@
         }
 
         if (start !== null && end !== null) {
-          drawHorizontalLine(this);
+          drawHorizontalLine(this, start, end);
           start = null;
           end = null;
         }
