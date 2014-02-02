@@ -36,6 +36,7 @@
 *   - hLineColor: #ccc   Horiontal sep line color
 *   - vLineColor: #ccc   Vertical sep line color
 *   - selector: div      Selector for elements in grid
+*   - sizes: [[1, 1]]    List of possible sizes [width, height] for elements.
 */
 (function($){
   'use strict';
@@ -48,23 +49,79 @@
       return num + 'px';
     }
 
+    function shuffle(array) {
+      var currentIndex = array.length,
+          temporaryValue,
+          randomIndex;
+
+      // While there remain elements to shuffle...
+      while (0 !== currentIndex) {
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+      }
+
+      return array;
+    }
+
     /**
      * Check if an element is allocable in a given position.
      */
-    function isAllocable(element, pos) {
-      if (pos[Y] + element.cols - 1 >= s.cols) {
+    function isAllocable(size, pos) {
+      if (pos[Y] + size[Y] - 1 >= s.cols) {
         return false;  // Element is too wide.
       }
 
-      for (var i = pos[X]; i < pos[X] + element.rows; i++) {
-        for (var j = pos[Y]; j < pos[Y] + element.cols; j++) {
-          if (grid[i] !== undefined && grid[i][j]) {
+      for (var i = pos[X]; i < pos[X] + size[X]; i++) {
+        for (var j = pos[Y]; j < pos[Y] + size[Y]; j++) {
+          if (grid[i] !== undefined && grid[i][j] >= 0) {
             return false;  // Space is already taken.
           }
         }
       }
 
       return true;
+    }
+
+    /**
+     * Get position of first empty space on grid.
+     */
+    function firstEmptySpace() {
+      for (var i = 0; i < grid.length; i++) {
+        for (var j = 0; j < s.cols; j++) {
+          if (grid[i][j] === undefined) {
+            return [i, j];
+          }
+        }
+      }
+
+      return [grid.length, 0];
+    }
+
+    /**
+     * Get a rndom size for the element.
+     */
+    function getRandomSize(pos, elementsRemaining) {
+      var sizes = shuffle(s.sizes);
+
+      /* Force last element to have size [1, 1]. It will be streched latter to
+       * make a perfect grid. */
+      if(elementsRemaining == 1) {
+        return [1, 1];
+      }
+
+      for (var i = 0; i < sizes.length; i++) {
+        if (isAllocable(sizes[i], pos)) {
+          return sizes[i];
+        }
+      }
+
+      return [1, 1];
     }
 
     /**
@@ -87,6 +144,41 @@
       element.append(line);
     }
 
+    function drawElement($element, config) {
+      // Set element position and dimensions on screen.
+      $element.css({
+        'position': 'absolute',
+        'display': 'inline-block',
+        'width': px(config.cols * (boxSide + vs) - vs),
+        'height': px(config.rows * (boxSide + hs) - hs),
+        'left': px(config.pos[Y] * (boxSide + vs)),
+        'top': px(config.pos[X] * (boxSide + hs))
+      });
+    }
+
+    function isRightFrontier(x, y) {
+      return grid[x] !== undefined && grid[x][y] != grid[x][y + 1];
+    }
+
+    function isTopFrontier(x, y) {
+      return grid[x][y] != grid[x + 1][y];
+    }
+
+    function shrinkRows($element, shrinkTo) {
+      var currentRows = $element.data('rows'),
+          cols = $element.data('cols'),
+          pos = $element.data('pos');
+
+      for (var i = shrinkTo + 1; i < pos[X] + currentRows; i++) {
+        for (var j = pos[Y]; j < pos[Y] + cols; j++) {
+          grid[i][j] = undefined;
+        }
+      }
+
+      $element.data('rows', shrinkTo - pos[X] + 1);
+      drawElement($element, $element.data());
+    }
+
     // Constants.
     var X = 0,
         Y = 1;
@@ -100,17 +192,17 @@
       'vLineThickness': 1,
       'hLineColor': '#ccc',
       'vLineColor': '#ccc',
-      'selector': 'div'
+      'selector': 'div',
+      'sizes': [[1, 1]]
     }, options);
 
     // Aux vars.
     var id = 0,
         grid = [],
-        vLines = [],
-        hLines = [],
         vs = s.vSpacing * 2 + s.vLineThickness,
         hs = s.hSpacing * 2 + s.hLineThickness,
         boxSide = (this.width() - (s.cols - 1) * vs) / s.cols,
+        $elements = $(s.selector, this),
         start,
         end;
 
@@ -130,67 +222,104 @@
     }
 
     // 1. Insert each element in grid using First Fit.
-    $(s.selector, this).each(function() {
-      var pos = [0, 0];
-      var element = {
-        'id': ++id,
-        'cols': $(this).data('cols'),
-        'rows': $(this).data('rows')
+    $elements.each(function(index) {
+      var pos = firstEmptySpace(),
+          size = getRandomSize(pos, $elements.length - index);
+
+      var config = {
+        'id': id++,
+        'pos': pos,
+        'rows': size[0],
+        'cols': size[1]
       };
 
       // Find the first fiting position.
-      while (!isAllocable(element, pos)) {
-        if (pos[Y] < s.cols) {
-          pos[Y] += 1;  // Jump a column.
-        } else {
-          pos[X] += 1;  // Jump a line.
-          pos[Y] = 0;  // Reset column to left.
-        }
-      }
+      //while (!isAllocable(config, pos)) {
+      //  if (pos[Y] < s.cols) {
+      //    pos[Y] += 1;  // Jump a column.
+      //  } else {
+      //    pos[X] += 1;  // Jump a line.
+      //    pos[Y] = 0;  // Reset column to left.
+      //  }
+      //}
 
-      // Mark the element position in a virtual auxiliar grid.
-      for (i = pos[X]; i < pos[X] + element.rows; i++) {
+      // Mark the element position in the virtual grid.
+      for (i = pos[X]; i < pos[X] + config.rows; i++) {
         if (grid[i] === undefined) {
           grid[i] = [];
         }
 
-        for (j = pos[Y]; j < pos[Y] + element.cols; j++) {
-          grid[i][j] = id;
+        for (j = pos[Y]; j < pos[Y] + config.cols; j++) {
+          grid[i][j] = config.id;
         }
       }
 
-      // Mark the horizontal sep lines position in a virtual auxiliar grid.
-      if (pos[X] > 0) {
-        if (hLines[pos[X] - 1] === undefined) {
-          hLines[pos[X] - 1] = [];
-        }
+      drawElement($(this), config);
 
-        for (i = pos[Y]; i < pos[Y] + element.cols; i++) {
-          hLines[pos[X] - 1][i] = true;
-        }
-      }
-
-      // Mark the vertical sep lines position in a virtual auxiliar grid.
-      if (pos[Y] > 0) {
-        for (i = pos[X]; i < pos[X] + element.rows; i++) {
-          if (vLines[i] === undefined) {
-            vLines[i] = [];
-          }
-
-          vLines[i][pos[Y] - 1] = true;
-        }
-      }
-
-      // Set element position and dimensions on screen.
-      $(this).css({
-        'position': 'absolute',
-        'display': 'inline-block',
-        'width': px(element.cols * (boxSide + vs) - vs),
-        'height': px(element.rows * (boxSide + hs) - hs),
-        'left': px(pos[Y] * (boxSide + vs)),
-        'top': px(pos[X] * (boxSide + hs))
-      });
+      // Store element info.
+      $(this).data(config);
     });
+
+    // If any element positioned on the left of the last element ends at a
+    // higher row than the last element it's necessary to shrink its rows
+    // until it ends at the same row of the last element.
+    var $last = $($elements[$elements.length - 1]),
+        posLast = $last.data('pos'),
+        rowsLast = $last.data('rows'),
+        colsLast = $last.data('cols'),
+        $element,
+        allFilled;
+
+    if (grid[posLast[X] + rowsLast] !== undefined) {
+      for (i = 0; i < posLast[Y]; i++) {
+        if (grid[posLast[X] + rowsLast][i] >= 0) {
+          $element = $($elements[grid[posLast[X] + rowsLast][i]]);
+
+          shrinkRows($element, posLast[X] + rowsLast - 1);
+        }
+      }
+    }
+
+    // If any element positioned on the right of the last element ends at a
+    // the same row as the the last element it's necessary to shrink its rows
+    // until it ends at the row above of the last element.
+    allFilled = true;
+
+    for (i = posLast[Y] + colsLast; i < s.cols; i++) {
+      allFilled &= grid[posLast[X]][i] >= 0;
+    }
+
+    if(!allFilled) {
+      for (i = posLast[Y] + colsLast; i < s.cols; i++) {
+        if (grid[posLast[X]][i] >= 0) {
+          $element = $($elements[grid[posLast[X]][i]]);
+
+          shrinkRows($element, posLast[X] - 1);
+        }
+      }
+    }
+
+    // Expand the last element to the end of grid.
+    allFilled = true;
+
+    for (i = posLast[Y] + colsLast; i < s.cols; i++) {
+      allFilled &= grid[posLast[X]][i] >= 0;
+    }
+
+    if (!allFilled) {
+      for (i = posLast[X]; i < posLast[X] + rowsLast; i++) {
+        for (j = posLast[Y] + colsLast; j < s.cols; j++) {
+          grid[i][j] = $last.data('id');
+        }
+      }
+      $last.data('cols', s.cols - posLast[Y]);
+      drawElement($last, $last.data());
+    }
+
+    // Remove extra grid lines.
+    grid.splice(posLast[X] + rowsLast, grid.length - posLast[X] - rowsLast);
+
+
 
     // 2. Group consecutive vertical sep lines and draw them.
     for (y = 0; y < s.cols - 1; y++) {
@@ -198,9 +327,9 @@
       end = null;
       x = 0;
 
-      while (x < vLines.length) {
+      while (x < grid.length) {
         // While exists consecutive sep lines.
-        while (vLines[x++] !== undefined && vLines[x - 1][y]) {
+        while (isRightFrontier(x++, y)) {
           if (start === null) {
             start = x - 1;
             end = x - 1;
@@ -233,26 +362,24 @@
 
     // 3. Group consecutive horizontal sep lines that doesn't cross separation
     // vertical lines and draw them.
-    for (x = 0; x < hLines.length; x++) {
+    for (x = 0; x < grid.length - 1; x++) {
       start = null;
       end = null;
       y = 0;
 
-      while (hLines[x] !== undefined && y < s.cols) {
+      while (grid[x] !== undefined && y < s.cols) {
         // While exists consecutive separation lines.
-        while (hLines[x][y++]) {
+        while (isTopFrontier(x, y++)) {
           if (start === null) {
             start = y - 1;
           }
 
-          else if (vLines[x] !== undefined  && vLines[x + 1] !== undefined) {
-            if(vLines[x][y - 2] && vLines[x + 1][y -2]) {
-              // Although the line is consecutive, it wont be grouped because
-              // in this case it would colide with a vertical line. Thus, the
-              // line must end before it colides and a new one is started.
-              drawHorizontalLine(this, start, end);
-              start = y - 1;
-            }
+          else if(isRightFrontier(x, y - 2) && isRightFrontier(x + 1, y - 2)) {
+            // Although the line is consecutive, it wont be grouped because
+            // in this case it would colide with a vertical line. Thus, the
+            // line must end before it colides and a new one is started.
+            drawHorizontalLine(this, start, end);
+            start = y - 1;
           }
 
           end = y - 1;
