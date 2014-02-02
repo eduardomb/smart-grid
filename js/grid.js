@@ -200,7 +200,7 @@
 
       while (x < vLines.length) {
         // While exists consecutive sep lines.
-        while (vLines[x] !== undefined && vLines[x++][y]) {
+        while (vLines[x++] !== undefined && vLines[x - 1][y]) {
           if (start === null) {
             start = x - 1;
             end = x - 1;
