@@ -221,6 +221,10 @@
       this.css('position', 'relative');
     }
 
+    if (!$elements.length) {
+      return this;
+    }
+
     // 1. Insert each element in grid using First Fit.
     $elements.each(function(index) {
       var pos = firstEmptySpace(),
