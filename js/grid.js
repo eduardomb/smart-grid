@@ -37,6 +37,7 @@
 *   - vLineColor: #ccc   Vertical sep line color
 *   - selector: div      Selector for elements in grid
 *   - sizes: [[1, 1]]    List of possible sizes [width, height] for elements.
+*   - startsWith: []     Specify first elements sizes.
 */
 (function($){
   'use strict';
@@ -193,7 +194,8 @@
       'hLineColor': '#ccc',
       'vLineColor': '#ccc',
       'selector': 'div',
-      'sizes': [[1, 1]]
+      'sizes': [[1, 1]],
+      'startsWith': []
     }, options);
 
     // Aux vars.
@@ -226,9 +228,9 @@
     }
 
     // 1. Insert each element in grid using First Fit.
-    $elements.each(function(index) {
+    $elements.each(function(i) {
       var pos = firstEmptySpace(),
-          size = getRandomSize(pos, $elements.length - index);
+          size = s.startsWith[i] || getRandomSize(pos, $elements.length - i);
 
       var config = {
         'id': id++,
