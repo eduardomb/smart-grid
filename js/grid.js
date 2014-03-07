@@ -37,7 +37,10 @@
 *   - vLineColor: #ccc   Vertical sep line color
 *   - selector: div      Selector for elements in grid
 *   - sizes: [[1, 1]]    List of possible sizes [width, height] for elements.
-*   - startsWith: []     Specify first elements sizes.
+*   - startsWith: []     Set specific sizes for first elements.
+*   - classSizes: {}     Override sizes and startsWith parameters above and set
+*                          new sizes list for specific classes.
+*                          Ex: {class1: [[1, 1]], class2: [[3,1],[3,2]]}
 */
 (function($){
   'use strict';
@@ -107,8 +110,8 @@
     /**
      * Get a rndom size for the element.
      */
-    function getRandomSize(pos, elementsRemaining) {
-      var sizes = shuffle(s.sizes);
+    function getRandomSize(pos, elementsRemaining, sizes) {
+      sizes = shuffle(sizes);
 
       /* Force last element to have size [1, 1]. It will be streched latter to
        * make a perfect grid. */
@@ -230,9 +233,25 @@
     // 1. Insert each element in grid using First Fit.
     $elements.each(function(i) {
       var pos = firstEmptySpace(),
-          size = s.startsWith[i] || getRandomSize(pos, $elements.length - i);
+          size = getRandomSize(pos, $elements.length - i, s.sizes),
+          stringify = function(i) { return i.join(); },
+          config;
 
-      var config = {
+      // Overide first elements sizes with startsWith.
+      size = s.startsWith[i] || size;
+
+      // Override size if element has any of the classes defined on classSizes.
+      for (var key in s.classSizes) {
+        var stringifiedList = s.classSizes[key].map(stringify),
+            sizeInClassSizes = stringifiedList.indexOf(stringify(size)) != -1;
+
+        if ($(this).hasClass(key) && !sizeInClassSizes) {
+          size = getRandomSize(pos, $elements.length - i, s.classSizes[key]);
+        }
+      }
+
+
+      config = {
         'id': id++,
         'pos': pos,
         'rows': size[0],
