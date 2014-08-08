@@ -41,6 +41,8 @@
 *   - classSizes: {}     Override sizes and startsWith parameters above and set
 *                          new sizes list for specific classes.
 *                          Ex: {class1: [[1, 1]], class2: [[3,1],[3,2]]}
+*   - aspectRatio        Number of times box height should be bigger than
+*                        width.
 */
 (function($){
   'use strict';
@@ -140,9 +142,9 @@
         'border-bottom-width': px(s.hLineThickness),
         'border-bottom-style': 'dotted',
         'position': 'absolute',
-        'width': px((end - start) * (boxSide + vs) + boxSide),
-        'left': px(start * (boxSide + vs)),
-        'top': px(x * (boxSide + vs) + boxSide + s.hSpacing)
+        'width': px((end - start) * (boxWidth + vs) + boxWidth),
+        'left': px(start * (boxWidth + vs)),
+        'top': px(x * (boxHeight + vs) + boxHeight + s.hSpacing)
       });
 
       element.append(line);
@@ -153,10 +155,10 @@
       $element.css({
         'position': 'absolute',
         'display': 'inline-block',
-        'width': px(config.cols * (boxSide + vs) - vs),
-        'height': px(config.rows * (boxSide + hs) - hs),
-        'left': px(config.pos[Y] * (boxSide + vs)),
-        'top': px(config.pos[X] * (boxSide + hs))
+        'width': px(config.cols * (boxWidth + vs) - vs),
+        'height': px(config.rows * (boxHeight + hs) - hs),
+        'left': px(config.pos[Y] * (boxWidth + vs)),
+        'top': px(config.pos[X] * (boxHeight + hs))
       });
     }
 
@@ -198,7 +200,8 @@
       'vLineColor': '#ccc',
       'selector': 'div',
       'sizes': [[1, 1]],
-      'startsWith': []
+      'startsWith': [],
+      'aspectRatio': 1
     }, options);
 
     // Aux vars.
@@ -206,7 +209,8 @@
         grid = [],
         vs = s.vSpacing * 2 + s.vLineThickness,
         hs = s.hSpacing * 2 + s.hLineThickness,
-        boxSide = (this.width() - (s.cols - 1) * vs) / s.cols,
+        boxWidth = (this.width() - (s.cols - 1) * vs) / s.cols,
+        boxHeight = boxWidth * s.aspectRatio,
         $elements = $(s.selector, this),
         start,
         end;
@@ -372,9 +376,9 @@
             'border-left-style': 'dotted',
             'border-left-color': s.vLineColor,
             'position': 'absolute',
-            'height': px((end - start) * (boxSide + hs) + boxSide),
-            'left': px(y * (boxSide + vs) + boxSide + s.vSpacing),
-            'top': px(start * (boxSide + hs))
+            'height': px((end - start) * (boxHeight + hs) + boxHeight),
+            'left': px(y * (boxWidth + vs) + boxWidth + s.vSpacing),
+            'top': px(start * (boxHeight + hs))
           });
 
           this.append(line);
@@ -419,7 +423,7 @@
     }
 
     // 4. Set the grid total height.
-    this.height(grid.length * (boxSide + hs));
+    this.height(grid.length * (boxHeight + hs));
 
     return this;
   };
