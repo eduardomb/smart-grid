@@ -254,23 +254,12 @@
         }
       }
 
-
       config = {
         'id': id++,
         'pos': pos,
         'rows': size[0],
         'cols': size[1]
       };
-
-      // Find the first fiting position.
-      //while (!isAllocable(config, pos)) {
-      //  if (pos[Y] < s.cols) {
-      //    pos[Y] += 1;  // Jump a column.
-      //  } else {
-      //    pos[X] += 1;  // Jump a line.
-      //    pos[Y] = 0;  // Reset column to left.
-      //  }
-      //}
 
       // Mark the element position in the virtual grid.
       for (i = pos[X]; i < pos[X] + config.rows; i++) {
@@ -289,9 +278,8 @@
       $(this).data(config);
     });
 
-    // If any element positioned on the left of the last element ends at a
-    // higher row than the last element it's necessary to shrink its rows
-    // until it ends at the same row of the last element.
+    // If any element ends at a higher row than the last element it's necessary
+    // to shrink its rows until it ends at the same row of the last element.
     var $last = $($elements[$elements.length - 1]),
         posLast = $last.data('pos'),
         rowsLast = $last.data('rows'),
@@ -300,7 +288,7 @@
         allFilled;
 
     if (grid[posLast[X] + rowsLast] !== undefined) {
-      for (i = 0; i < posLast[Y]; i++) {
+      for (i = 0; i < s.cols; i++) {
         if (grid[posLast[X] + rowsLast][i] >= 0) {
           $element = $($elements[grid[posLast[X] + rowsLast][i]]);
 
@@ -347,8 +335,6 @@
 
     // Remove extra grid lines.
     grid.splice(posLast[X] + rowsLast, grid.length - posLast[X] - rowsLast);
-
-
 
     // 2. Group consecutive vertical sep lines and draw them.
     for (y = 0; y < s.cols - 1; y++) {
