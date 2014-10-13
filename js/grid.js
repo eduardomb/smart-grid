@@ -39,10 +39,12 @@
 *   - sizes: [[1, 1]]    List of possible sizes [width, height] for elements.
 *   - startsWith: []     Set specific sizes for first elements.
 *   - classSizes: {}     Override sizes and startsWith parameters above and set
-*                          new sizes list for specific classes.
-*                          Ex: {class1: [[1, 1]], class2: [[3,1],[3,2]]}
+*                        new sizes list for specific classes.
+*                        Ex: {class1: [[1, 1]], class2: [[3,1],[3,2]]}
 *   - aspectRatio        Number of times box height should be bigger than
 *                        width.
+*   - hBox               Overrides automatic box height calculation via
+*                        aspectRatio
 */
 (function($){
   'use strict';
@@ -201,7 +203,8 @@
       'selector': 'div',
       'sizes': [[1, 1]],
       'startsWith': [],
-      'aspectRatio': 1
+      'aspectRatio': 1,
+      'hBox': 0
     }, options);
 
     // Aux vars.
@@ -210,7 +213,7 @@
         vs = s.vSpacing * 2 + s.vLineThickness,
         hs = s.hSpacing * 2 + s.hLineThickness,
         boxWidth = (this.width() - (s.cols - 1) * vs) / s.cols,
-        boxHeight = boxWidth * s.aspectRatio,
+        boxHeight = (s.hBox ? s.hBox : (boxWidth * s.aspectRatio)),
         $elements = $(s.selector, this),
         start,
         end;
